@@ -1,0 +1,57 @@
+\documentclass{article}
+
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=1cm,right=1cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\setcounter{MaxMatrixCols}{15}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{braket}
+\usepackage{mathtools}
+\usepackage{tikz}
+
+\title{8,3,2 Code}
+
+\begin{document}
+\section{Intro}
+Keeping same construction: 
+\[S = \begin{pmatrix}
+    Z & Z & Z & Z & I & I & I & I\\
+    I & I & I & I & Z & Z & Z & Z\\
+    Z & Z & I & I & Z & Z & I & I\\
+    Z & I & Z & I & Z & I & Z & I\\
+    X & X & X & X & X & X & X & X\\
+\end{pmatrix}\]
+Switch to looking at gauging X logops to improve coverage of Z-type errors. This is because I notice that the Z type stabilizers have very good coverage already, and only weight 4 X-type errors can fall through. However, since the single X stabilizer is only a global parity check, Z-errors of weight 2 can fall through.
+
+\section{Algebraic Model}
+Perform probability sum (loose def, I am actually implementing it in stim and then cross checking with manual calculations to verify) over error space to determine which errors fall through and the resulting total fallthrough (failure) probability of the X-type logical operators. 
+
+Enumerate over all $4^8 = 65536$ possible error strings, calculating probability of this particular error string occurring as modified binom ($p/3$ for prob of X, Y, or Z error, compensated by multiplying by 3 possibilities for each error):
+\[p_e(n) = {8\choose n} (1-p)^n \left(\frac{p}{3}\right)^{8-n} (3)^n\]
+Run error strings through syndrome extraction measurement for default stabilizers, measure readout and syndrome detector. Postselect on no detector fires, and add calculated probs to total probability of failure for each X-type logical operator. I am working at $p=0.1$ for now.
+
+Speed up by capping at weight 3 errors, we expect only weight 2 Z errors to fall through (Y errors are correctly detected by Z stabilizers). These occur with probability $(0.9)^6(0.1*1/3)^2 = 0.00059049$. Kept error sequences: 1788 out of 65536, Covered probability: 0.9949756499999682 / 1.000000000000325. Basic results:
+\begin{table}[h]
+    \centering
+    \begin{tabular}{c|c|c}
+        Scheme & Logop error rate & N fallthrough errors \\
+        \hline
+        Default & 0.00944784 & 224 / 1788 \\
+        \hline
+        Single prom & 0.00472392 & 96 / 1788 \\
+        \hline
+        Double prom & 0.00236196 & 32 / 1788 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\end{document}
