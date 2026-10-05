@@ -139,6 +139,13 @@ class CircuitBuilder:
             instruction += f' {qubitslist[i]} {self.ancilla_qubitsz[i]}'
         self.add_line_with_auto_error(instruction) if with_auto_error else self.add_line(instruction)
 
+    def inject_error(self, qubitslist, error_type):
+        """
+        Inject an error into a list of qubits
+        """
+        for qubit in qubitslist:
+            self.add_line(f'{error_type} {qubit}')
+
     def get_circuit(self):
         return self.circuit
 

@@ -133,7 +133,6 @@ def randomize_schedule(schedule, max_attempts=1000):
     else:
         return randomize_schedule(schedule, max_attempts - 1)
 
-
 def windowFiller(schedule, nwindow):
     thiswindow = []
     for row in schedule:
@@ -221,85 +220,90 @@ doublepromotionschedules = pickle.load(open(os.path.join(os.path.dirname(__file_
 nrounds = [1, 2, 4]
 ers = [0.0001, 0.001, 0.01]
 
-dopromotionsimulations = False
-if dopromotionsimulations:
-    for i in range(numruns):
-        # Single promotion schedules experiment setup
-        rand = np.random.randint(0, len(singlepromotionschedules))
-        zschedule = defaultzschedule
-        xschedule = singlepromotionschedules[rand]
-        for j in tqdm(range(numrandomizations), desc = f'Running single promotion schedule {i}'):
-            randzschedule, nz = randomize_schedule(zschedule, 1000)
-            randxschedule, nx = randomize_schedule(xschedule, 1000)
-            cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
-            with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_single_rand{j}.txt'), 'w') as f:
-                f.write(f'{rand} {nz} {nx}\n')
-                f.write(f'{randzschedule}\n{randxschedule}\n')
-                f.write(str(cb.get_circuit().diagram()))
-            for k in range(len(nrounds)):
-                for l in range(len(ers)):
-                    cb = c832scheduleable(ers[l], nrounds[k], zschedule=randzschedule, xschedule=randxschedule)
-                    sample = cb.sample(nshots = nshots)
-                    with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_single_rand{j}_n{k}_er{l}.bin'), 'wb') as f:
-                        for row in sample:
-                            comp = np.uint64(int(row[0], 2))
-                            f.write(np.uint64(comp).tobytes())
-                            f.write(np.uint32(row[1]).tobytes())
+def main():
+    dopromotionsimulations = False
+    if dopromotionsimulations:
+        for i in range(numruns):
+            # Single promotion schedules experiment setup
+            rand = np.random.randint(0, len(singlepromotionschedules))
+            zschedule = defaultzschedule
+            xschedule = singlepromotionschedules[rand]
+            for j in tqdm(range(numrandomizations), desc = f'Running single promotion schedule {i}'):
+                randzschedule, nz = randomize_schedule(zschedule, 1000)
+                randxschedule, nx = randomize_schedule(xschedule, 1000)
+                cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
+                with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_single_rand{j}.txt'), 'w') as f:
+                    f.write(f'{rand} {nz} {nx}\n')
+                    f.write(f'{randzschedule}\n{randxschedule}\n')
+                    f.write(str(cb.get_circuit().diagram()))
+                for k in range(len(nrounds)):
+                    for l in range(len(ers)):
+                        cb = c832scheduleable(ers[l], nrounds[k], zschedule=randzschedule, xschedule=randxschedule)
+                        sample = cb.sample(nshots = nshots)
+                        with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_single_rand{j}_n{k}_er{l}.bin'), 'wb') as f:
+                            for row in sample:
+                                comp = np.uint64(int(row[0], 2))
+                                f.write(np.uint64(comp).tobytes())
+                                f.write(np.uint32(row[1]).tobytes())
 
-        # Double promotion schedules experiment setup
-        rand = np.random.randint(0, len(doublepromotionschedules))
-        zschedule = defaultzschedule
-        xschedule = doublepromotionschedules[rand]
-        for j in tqdm(range(numrandomizations), desc = f'Running double promotion schedule {i}'):
-            randzschedule, nz = randomize_schedule(zschedule, 1000)
-            randxschedule, nx = randomize_schedule(xschedule, 1000)
-            cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
-            with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_double_rand{j}.txt'), 'w') as f:
-                f.write(f'{rand} {nz} {nx}\n')
-                f.write(f'{randzschedule}\n{randxschedule}\n')
-                f.write(str(cb.get_circuit().diagram()))
-            for k in range(len(nrounds)):
-                for l in range(len(ers)):
-                    cb = c832scheduleable(ers[l], nrounds[k], zschedule=randzschedule, xschedule=randxschedule)
-                    sample = cb.sample(nshots = nshots)
-                    with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_double_rand{j}_n{k}_er{l}.bin'), 'wb') as f:
-                        for row in sample:
-                            comp = np.uint64(int(row[0], 2))
-                            f.write(np.uint64(comp).tobytes())
-                            f.write(np.uint32(row[1]).tobytes())
+            # Double promotion schedules experiment setup
+            rand = np.random.randint(0, len(doublepromotionschedules))
+            zschedule = defaultzschedule
+            xschedule = doublepromotionschedules[rand]
+            for j in tqdm(range(numrandomizations), desc = f'Running double promotion schedule {i}'):
+                randzschedule, nz = randomize_schedule(zschedule, 1000)
+                randxschedule, nx = randomize_schedule(xschedule, 1000)
+                cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
+                with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_double_rand{j}.txt'), 'w') as f:
+                    f.write(f'{rand} {nz} {nx}\n')
+                    f.write(f'{randzschedule}\n{randxschedule}\n')
+                    f.write(str(cb.get_circuit().diagram()))
+                for k in range(len(nrounds)):
+                    for l in range(len(ers)):
+                        cb = c832scheduleable(ers[l], nrounds[k], zschedule=randzschedule, xschedule=randxschedule)
+                        sample = cb.sample(nshots = nshots)
+                        with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_double_rand{j}_n{k}_er{l}.bin'), 'wb') as f:
+                            for row in sample:
+                                comp = np.uint64(int(row[0], 2))
+                                f.write(np.uint64(comp).tobytes())
+                                f.write(np.uint32(row[1]).tobytes())
 
-dobasesimulation = True
-if dobasesimulation:            
-    # Simulate base code, no promotion
-    cb = c832scheduleable(0.01, 1, zschedule=defaultzschedule, xschedule=defaultxschedule)
-    with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion.txt'), 'w') as f:
-        f.write(f'{defaultzschedule}\n{defaultxschedule}\n')
-        f.write(str(cb.get_circuit().diagram()))
-    for k in range(len(nrounds)):
-        for l in range(len(ers)):
-            cb = c832scheduleable(ers[l], nrounds[k], zschedule=defaultzschedule, xschedule=defaultxschedule)
-            sample = cb.sample(nshots = nshots)
-            with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion_n{k}_er{l}.bin'), 'wb') as f:
-                for row in sample:
-                    comp = np.uint64(int(row[0], 2))
-                    f.write(np.uint64(comp).tobytes())
-                    f.write(np.uint32(row[1]).tobytes())
-
-    for j in tqdm(range(numrandomizations)):
-        randzschedule, nz = randomize_schedule(defaultzschedule, 1000)
-        #randxschedule, nx = randomize_schedule(defaultxschedule, 1000)
-        randxschedule, nx = defaultxschedule, 0
-        cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
-        with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion_rand{j}.txt'), 'w') as f:
-            f.write(f'{nz} {nx}\n')
-            f.write(f'{randzschedule}\n{randxschedule}\n')
+    dobasesimulation = True
+    if dobasesimulation:            
+        # Simulate base code, no promotion
+        cb = c832scheduleable(0.01, 1, zschedule=defaultzschedule, xschedule=defaultxschedule)
+        with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion.txt'), 'w') as f:
+            f.write(f'{defaultzschedule}\n{defaultxschedule}\n')
             f.write(str(cb.get_circuit().diagram()))
         for k in range(len(nrounds)):
             for l in range(len(ers)):
-                cb = c832scheduleable(ers[l], nrounds[k], zschedule=randzschedule, xschedule=randxschedule)
+                cb = c832scheduleable(ers[l], nrounds[k], zschedule=defaultzschedule, xschedule=defaultxschedule)
                 sample = cb.sample(nshots = nshots)
-                with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion_rand{j}_n{k}_er{l}.bin'), 'wb') as f:
+                with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion_n{k}_er{l}.bin'), 'wb') as f:
                     for row in sample:
                         comp = np.uint64(int(row[0], 2))
                         f.write(np.uint64(comp).tobytes())
                         f.write(np.uint32(row[1]).tobytes())
+
+        for j in tqdm(range(numrandomizations)):
+            randzschedule, nz = randomize_schedule(defaultzschedule, 1000)
+            #randxschedule, nx = randomize_schedule(defaultxschedule, 1000)
+            randxschedule, nx = defaultxschedule, 0
+            cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
+            with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion_rand{j}.txt'), 'w') as f:
+                f.write(f'{nz} {nx}\n')
+                f.write(f'{randzschedule}\n{randxschedule}\n')
+                f.write(str(cb.get_circuit().diagram()))
+            for k in range(len(nrounds)):
+                for l in range(len(ers)):
+                    cb = c832scheduleable(ers[l], nrounds[k], zschedule=randzschedule, xschedule=randxschedule)
+                    sample = cb.sample(nshots = nshots)
+                    with open(os.path.join(os.path.dirname(__file__), outdir, f'nopromotion_rand{j}_n{k}_er{l}.bin'), 'wb') as f:
+                        for row in sample:
+                            comp = np.uint64(int(row[0], 2))
+                            f.write(np.uint64(comp).tobytes())
+                            f.write(np.uint32(row[1]).tobytes())
+
+if __name__ == "__main__":
+    main()
+            
