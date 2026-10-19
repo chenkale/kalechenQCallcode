@@ -12,7 +12,7 @@ PARAMS
 
 nrounds = [1, 2, 4]
 ers = [0.0001, 0.001, 0.01]
-outpath = 'batcherout.csv'
+outpath = 'batcheroutsingle.csv'
 nshots = 1000000
 
 
