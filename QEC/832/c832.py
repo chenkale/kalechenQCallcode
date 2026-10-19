@@ -4,8 +4,8 @@ import pickle
 import os
 from tqdm import tqdm
 
-numruns = 10
-numrandomizations = 20
+numruns = 5
+numrandomizations = 5
 nshots = 1000000
 outdir = 'sim'
 
@@ -94,7 +94,24 @@ defaultzschedule = np.asarray([
 defaultxschedule = np.asarray([
     [1, 2, 3, 4, 5, 6, 7, 8]
 ])
-
+def has_hook_error(z, x):
+    hook_error_locations = []
+    for row in z:
+        for twindow in range(1, 4):
+            mask = row > twindow
+            xsyndrome = np.zeros((x.shape[0], x.shape[1]), dtype=bool)
+            for j in range(x.shape[0]):
+                masked = (x[j] > 0) & mask
+                xsyndrome[j] = masked
+            # A "hook error" occurs if for this twindow, no X-check covers only one qubit in the masked locations (i.e., all have 0 or >1 overlap)
+            fallthrough = True
+            for j in range(xsyndrome.shape[0]):
+                if np.sum(xsyndrome[j]) == 1 or np.sum(xsyndrome[j]) == 3:
+                    fallthrough = False
+                    break
+            if fallthrough:
+                hook_error_locations.append((row.copy(), twindow))
+    return True if len(hook_error_locations) > 0 else False
 def checkvalidschedule(schedule):
     for row in schedule:
         seen = set()
@@ -183,6 +200,16 @@ def c832scheduleable(er = 0, nrounds = 1, zschedule = defaultzschedule, xschedul
     cb.add_detectors([[-1 - i, -1 - i - nancillas] for i in range(len(cb.ancilla_qubitsx))])
     cb.al('R ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsz]))
     cb.end_loop()
+    # Cooldown round
+    for windowz in range(1, np.max(zschedule) + 1):
+        cb.couple_z_check(windowFiller(zschedule, windowz), False)
+    cb.al('MR(0) ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsz]))
+    cb.al('H ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsx]))
+    for windowx in range(1, np.max(xschedule) + 1):
+        cb.couple_x_check(windowFiller(xschedule, windowx), False)
+    cb.al('H ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsx]))
+    cb.al('MR(0) ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsx]))
+    cb.al('R ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsz]))
     # Final measurement of all physical qubits
     cb.al('H 0 1 2 3 4 5 6 7')
     cb.al(f'MR({0}) 0 1 2 3 4 5 6 7')
@@ -221,7 +248,7 @@ nrounds = [1, 2, 4]
 ers = [0.0001, 0.001, 0.01]
 
 def main():
-    dopromotionsimulations = False
+    dopromotionsimulations = True
     if dopromotionsimulations:
         for i in range(numruns):
             # Single promotion schedules experiment setup
@@ -231,6 +258,9 @@ def main():
             for j in tqdm(range(numrandomizations), desc = f'Running single promotion schedule {i}'):
                 randzschedule, nz = randomize_schedule(zschedule, 1000)
                 randxschedule, nx = randomize_schedule(xschedule, 1000)
+                while has_hook_error(randzschedule, randxschedule):
+                    randzschedule, nz = randomize_schedule(zschedule, 1000)
+                    randxschedule, nx = randomize_schedule(xschedule, 1000)
                 cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
                 with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_single_rand{j}.txt'), 'w') as f:
                     f.write(f'{rand} {nz} {nx}\n')
@@ -253,6 +283,9 @@ def main():
             for j in tqdm(range(numrandomizations), desc = f'Running double promotion schedule {i}'):
                 randzschedule, nz = randomize_schedule(zschedule, 1000)
                 randxschedule, nx = randomize_schedule(xschedule, 1000)
+                while has_hook_error(randzschedule, randxschedule):
+                    randzschedule, nz = randomize_schedule(zschedule, 1000)
+                    randxschedule, nx = randomize_schedule(xschedule, 1000)
                 cb = c832scheduleable(0.01, 1, zschedule=randzschedule, xschedule=randxschedule)
                 with open(os.path.join(os.path.dirname(__file__), outdir, f'run{i}_double_rand{j}.txt'), 'w') as f:
                     f.write(f'{rand} {nz} {nx}\n')
