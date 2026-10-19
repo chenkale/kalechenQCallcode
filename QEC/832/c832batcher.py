@@ -12,7 +12,7 @@ PARAMS
 
 nrounds = [1, 2, 4]
 ers = [0.0001, 0.001, 0.01]
-outpath = 'batcherout.csv'
+outpath = 'batcheroutsingle.csv'
 nshots = 1000000
 
 
@@ -130,25 +130,21 @@ def measure_readout(readout, logical_operator):
             parity += 1
     return parity % 2
 
-def sim_analysis(sample, syndromelength, nrounds, logops):
-    totalshots = 0
-    totalerrors = [0 for _ in logops]
-    survived = 0
-    survivederrors = [0 for _ in logops]
-    for row in sample:
-        bitstring = row[0]
-        count = row[1]
-        det, finalmeasurement = detector_builder(bitstring, syndromelength, 8, nrounds + 1, 'binary')
-        detector_fired = check_detector_fired(det)
-        totalshots += count
-        if not detector_fired:
-            survived += count
-        for i in range(len(logops)):
-            logop = logops[i]
-            if measure_readout(finalmeasurement, logop) == 1:
-                totalerrors[i] += count
-                if not detector_fired:
-                    survivederrors[i] += count
+def sim_analysis(shots, syndromelength, nrounds, logops):
+    nphysicalqubits = 8
+    det_rounds = nrounds + 1
+    if shots.shape[1] != syndromelength * (det_rounds + 1) + nphysicalqubits:
+        raise ValueError(f"Measurement sequence length must be equal to syndromelength * nrounds + nphysicalqubits")
+    syndromes = shots[:, :-nphysicalqubits].reshape(shots.shape[0], det_rounds + 1, syndromelength)
+    finalmeasurement = shots[:, -nphysicalqubits:]
+    detector_fired = np.logical_xor(syndromes[:, :-1, :], syndromes[:, 1:, :]).any(axis=(1, 2))
+    logop_mat = np.stack([np.asarray(logop, dtype=bool) for logop in logops])
+    error_mask = ((finalmeasurement.astype(np.uint8) @ logop_mat.astype(np.uint8).T) & 1).astype(bool)
+    survived_mask = ~detector_fired
+    totalshots = int(shots.shape[0])
+    totalerrors = error_mask.sum(axis=0).tolist()
+    survived = int(survived_mask.sum())
+    survivederrors = (error_mask & survived_mask[:, None]).sum(axis=0).tolist()
     return totalshots, totalerrors, survived, survivederrors
 
 if os.path.exists(outpath):
@@ -159,7 +155,7 @@ for s in tqdm(range(len(schedulelist))):
     for n in range(len(nrounds)):
         for e in range(len(ers)):
             cb = c832scheduleable(ers[e], nrounds[n], zschedule=zschedule, xschedule=xschedule)
-            sample = cb.sample(nshots = nshots)
+            sample = cb.get_circuit().compile_sampler().sample(nshots)
             syndromelength = len(zschedule) + len(xschedule)
             totalshots, totalerrors, survived, survivederrors = sim_analysis(sample, syndromelength, nrounds[n], logops)
             with open(outpath, 'a') as f:
