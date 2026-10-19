@@ -1,4 +1,5 @@
 # Class for tools to build circuits
+import numpy as np
 import stim
 
 class CircuitBuilder:
@@ -17,14 +18,60 @@ class CircuitBuilder:
     all_qubits = set()
 
     def __init__(self, p_measurement_error=0, px_error=0, pz_error=0, pdp1_error=0, pdp2_error=0, pidle_error=0):
+        """
+        pidle_error is either a scalar, applied to every qubit, or a 1-d array
+        whose entry i is the idle depolarizing probability of qubit i.
+        An array also sets each CX DEPOLARIZE2 probability to the larger of
+        the two qubits' idle probabilities. A scalar leaves CX noise on pdp2_error.
+        """
         self.circuit = stim.Circuit()
         self.p_measurement_error = p_measurement_error
         self.px_error = px_error
         self.pz_error = pz_error
         self.pdp1_error = pdp1_error
         self.pdp2_error = pdp2_error
-        self.pidle_error = pidle_error
+        self._pidle_per_qubit = isinstance(pidle_error, (list, tuple)) or (
+            isinstance(pidle_error, np.ndarray) and np.asarray(pidle_error).ndim >= 1
+        )
+        if self._pidle_per_qubit:
+            self.pidle_error = np.asarray(pidle_error, dtype=float).reshape(-1)
+        else:
+            self.pidle_error = pidle_error
         self.all_qubits = set()
+
+    def _pidle_of(self, qubit):
+        n = len(self.pidle_error)
+        if qubit < 0 or qubit >= n:
+            raise IndexError(f"pidle_error has length {n}, no entry for qubit {qubit}")
+        return float(self.pidle_error[qubit])
+
+    def _append_idle_depolarize(self, target_circuit, qubitslist):
+        if not self._pidle_per_qubit:
+            target_circuit.append('DEPOLARIZE1', qubitslist, self.pidle_error)
+            return
+        groups = {}
+        for q in qubitslist:
+            p = self._pidle_of(q)
+            if p > 0:
+                groups.setdefault(p, []).append(q)
+        for p, qs in groups.items():
+            target_circuit.append('DEPOLARIZE1', qs, p)
+
+    def _append_cnot_depolarize(self, target_circuit, qubitslist):
+        if not self._pidle_per_qubit:
+            if self.pdp2_error > 0:
+                target_circuit.append('DEPOLARIZE2', qubitslist, self.pdp2_error)
+            return
+        if len(qubitslist) % 2 != 0:
+            raise ValueError(f"CX target list must be pairs, got {qubitslist}")
+        groups = {}
+        for i in range(0, len(qubitslist), 2):
+            a, b = qubitslist[i], qubitslist[i + 1]
+            p = max(self._pidle_of(a), self._pidle_of(b))
+            if p > 0:
+                groups.setdefault(p, []).extend([a, b])
+        for p, qs in groups.items():
+            target_circuit.append('DEPOLARIZE2', qs, p)
 
     def _get_target_circuit(self):
         return self.loop_circuit if self.in_loop else self.circuit
@@ -57,7 +104,7 @@ class CircuitBuilder:
             elif gate == 'H':
                 target_circuit.append('DEPOLARIZE1', qubitslist, self.pdp1_error)
             elif gate == 'CX':
-                target_circuit.append('DEPOLARIZE2', qubitslist, self.pdp2_error) if self.pdp2_error > 0 else None
+                self._append_cnot_depolarize(target_circuit, qubitslist)
             elif gate[:2] == 'MR':
                 target_circuit.append('X_ERROR', qubitslist, self.px_error)
             else:
@@ -91,12 +138,10 @@ class CircuitBuilder:
         self.ancilla_qubitsz = qubitslistz
 
     def idle_noise(self, qubitslist):
-        target_circuit = self._get_target_circuit()
-        target_circuit.append('DEPOLARIZE1', qubitslist, self.pidle_error)
+        self._append_idle_depolarize(self._get_target_circuit(), qubitslist)
 
     def idle_noise_all(self):
-        target_circuit = self._get_target_circuit()
-        target_circuit.append('DEPOLARIZE1', list(self.all_qubits), self.pidle_error)
+        self._append_idle_depolarize(self._get_target_circuit(), list(self.all_qubits))
 
     def time_tick(self):
         self.add_line('TICK')
