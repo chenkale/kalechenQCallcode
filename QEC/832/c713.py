@@ -14,14 +14,15 @@ outdir = 'sim713'
 #   Z/X_2: 0,2,4,6
 # Schedule entries are coupling time windows; 0 means no coupling.
 defaultzschedule = np.asarray([
-    [1, 2, 3, 4, 0, 0, 0],
-    [2, 1, 0, 0, 3, 4, 0],
-    [3, 0, 1, 0, 2, 0, 4],
+    [1, 2, 3, 4, 0, 0, 0, 0],
+    [2, 1, 0, 0, 3, 4, 0, 0],
+    [3, 0, 1, 0, 2, 0, 4, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1]
 ])
 defaultxschedule = np.asarray([
-    [1, 2, 3, 4, 0, 0, 0],
-    [2, 1, 0, 0, 3, 4, 0],
-    [3, 0, 1, 0, 2, 0, 4],
+    [1, 2, 3, 4, 0, 0, 0, 0],
+    [2, 1, 0, 0, 3, 4, 0, 0],
+    [3, 0, 1, 0, 2, 0, 4, 0],
 ])
 
 def checkvalidschedule(schedule):
@@ -72,19 +73,22 @@ def windowFiller(schedule, nwindow):
 
 def c713scheduleable(er=0, nrounds=1, zschedule=defaultzschedule, xschedule=defaultxschedule):
     """
-    Schedulable Steane [[7,1,3]] circuit: 7 data qubits + 3 Z + 3 X ancillas.
-    Same warmup / noisy-loop / cooldown structure as c832scheduleable, without promotion.
+    Schedulable Steane [[7,1,3]] padded to 8 data qubits.
+    Qubits 0-6 are the Steane block. Qubit 7 is an extra data qubit whose only
+    check is the last Z row of the default schedule. Ancillas start at qubit 8:
+    one per Z row, then one per X row.
     """
     zschedule, xschedule = np.asarray(zschedule), np.asarray(xschedule)
+    ndata = zschedule.shape[1]
     cb = CircuitBuilder.CircuitBuilder(er, er, er, er, er, er)
-    cb.al('R 0 1 2 3 4 5 6')
-    cb.al('H 0 1 2 3 4 5 6')
+    cb.al('R ' + ' '.join(str(i) for i in range(ndata)))
+    cb.al('H ' + ' '.join(str(i) for i in range(ndata)))
     nancillas = len(zschedule) + len(xschedule)
-    ancillastring = 'R ' + ' '.join([f'{i}' for i in range(7, 7 + nancillas)])
+    ancillastring = 'R ' + ' '.join([f'{i}' for i in range(ndata, ndata + nancillas)])
     cb.al(ancillastring)
     cb.set_ancilla_qubits(
-        qubitslistz=[7 + i for i in range(len(zschedule))],
-        qubitslistx=[7 + len(zschedule) + i for i in range(len(xschedule))],
+        qubitslistz=[ndata + i for i in range(len(zschedule))],
+        qubitslistx=[ndata + len(zschedule) + i for i in range(len(xschedule))],
     )
     # Warmup round
     for windowz in range(1, np.max(zschedule) + 1):
@@ -124,11 +128,11 @@ def c713scheduleable(er=0, nrounds=1, zschedule=defaultzschedule, xschedule=defa
     cb.al('MR(0) ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsx]))
     cb.al('R ' + ' '.join([f'{i}' for i in cb.ancilla_qubitsz]))
     # Final measurement of all physical qubits
-    cb.al('H 0 1 2 3 4 5 6')
-    cb.al(f'MR({0}) 0 1 2 3 4 5 6')
+    cb.al('H ' + ' '.join(str(i) for i in range(ndata)))
+    cb.al('MR(0) ' + ' '.join(str(i) for i in range(ndata)))
     return cb
 
-def detector_builder(mseq, syndromelength=6, nphysicalqubits=7, nrounds=1, mode='binary'):
+def detector_builder(mseq, syndromelength=7, nphysicalqubits=8, nrounds=1, mode='binary'):
     if len(mseq) != syndromelength * (nrounds + 1) + nphysicalqubits:
         raise ValueError(f"Measurement sequence length must be equal to syndromelength * (nrounds + 1) + nphysicalqubits")
     syndromes, finalmeasurement = mseq[:-nphysicalqubits], mseq[-nphysicalqubits:]
@@ -152,6 +156,50 @@ def toDecimal(binary):
 
 def negate(string):
     return ''.join(['1' if x == '0' else '0' for x in string])
+
+def logical_operators_713():
+    """X-logical coset of the padded Steane code, as length-8 boolean vectors.
+
+    Qubits 0-6 carry the Steane logical X = X^{\\otimes 7}. Qubit 7 is excluded so
+    every operator commutes with the weight-1 Z check on that qubit. The eight
+    vectors are that logical multiplied by each element of the X-stabilizer group.
+    """
+    xgens = np.array([
+        [1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 0, 0, 1, 1, 0, 0],
+        [1, 0, 1, 0, 1, 0, 1, 0],
+    ], dtype=int)
+    logical = np.array([1, 1, 1, 1, 1, 1, 1, 0], dtype=int)
+    ops = []
+    for mask in range(1 << len(xgens)):
+        op = logical.copy()
+        for i in range(len(xgens)):
+            if mask & (1 << i):
+                op ^= xgens[i]
+        ops.append(op.astype(bool))
+    return ops
+
+def make_schedulelist_713(n=100, seed=0):
+    """n distinct randomizations of the default padded Steane Z and X schedules."""
+    np.random.seed(seed)
+    used = set()
+    schedulelist = []
+    attempts = 0
+    while len(schedulelist) < n:
+        attempts += 1
+        if attempts > n * 1000:
+            raise RuntimeError(f"Only found {len(schedulelist)} unique schedules in {attempts} attempts")
+        z = randomize_schedule(defaultzschedule, 1000)
+        x = randomize_schedule(defaultxschedule, 1000)
+        if z is None or x is None:
+            continue
+        z, x = z[0], x[0]
+        pair_id = (z.tobytes(), x.tobytes())
+        if pair_id in used:
+            continue
+        used.add(pair_id)
+        schedulelist.append((z.copy(), x.copy()))
+    return schedulelist
 
 nrounds = [1, 2, 4]
 ers = [0.0001, 0.001, 0.01]
