@@ -1,8 +1,6 @@
 import numpy as np
 import pickle
 import CircuitBuilder
-import numpy as np
-import pickle
 from tqdm import tqdm
 import os
 
@@ -16,11 +14,11 @@ nshots = 1000000
 # Per-qubit idle-error weights, one landscape per schedule in schedulelist.pkl.
 # Entry i is the multiplier for qubit i. Mean 1 keeps the average at `er`.
 # CNOT noise is the larger of the two qubits' idle probabilities.
-landscapepath = os.path.join(os.path.dirname(__file__), 'hotspoterrors700.pkl')
-outpath = 'batcherouthotspot700.csv'
+landscapepath = os.path.join(os.path.dirname(__file__), 'hotspoterrors2800.pkl')
+outpath = 'batcherouthotspot2800.csv'
 
 
-schedulelist = pickle.load(open(os.path.join(os.path.dirname(__file__), 'schedulelist.pkl'), 'rb'))
+schedulelist = pickle.load(open(os.path.join(os.path.dirname(__file__), 'schedulelist2.pkl'), 'rb'))
 logops = pickle.load(open(os.path.join(os.path.dirname(__file__), 'logops.pkl'), 'rb'))
 landscapes = pickle.load(open(landscapepath, 'rb'))
 if len(landscapes) != len(schedulelist):
