@@ -12,12 +12,19 @@ PARAMS
 
 nrounds = [1, 2, 4]
 ers = [0.0001, 0.001, 0.01]
-outpath = 'batcheroutsingle.csv'
 nshots = 1000000
+# Per-qubit idle-error weights, one landscape per schedule in schedulelist.pkl.
+# Entry i is the multiplier for qubit i. Mean 1 keeps the average at `er`.
+# CNOT noise is the larger of the two qubits' idle probabilities.
+landscapepath = os.path.join(os.path.dirname(__file__), 'hotspoterrors700.pkl')
+outpath = 'batcherouthotspot700.csv'
 
 
 schedulelist = pickle.load(open(os.path.join(os.path.dirname(__file__), 'schedulelist.pkl'), 'rb'))
 logops = pickle.load(open(os.path.join(os.path.dirname(__file__), 'logops.pkl'), 'rb'))
+landscapes = pickle.load(open(landscapepath, 'rb'))
+if len(landscapes) != len(schedulelist):
+    raise ValueError(f"{landscapepath} has {len(landscapes)} landscapes for {len(schedulelist)} schedules")
 
 
 defaultzschedule = np.asarray([
@@ -38,9 +45,15 @@ def windowFiller(schedule, nwindow):
             thiswindow.append(None)
     return thiswindow
 
-def c832scheduleable(er = 0, nrounds = 1, zschedule = defaultzschedule, xschedule = defaultxschedule):
+def c832scheduleable(er = 0, nrounds = 1, zschedule = defaultzschedule, xschedule = defaultxschedule, pidle = None):
     zschedule, xschedule = np.asarray(zschedule), np.asarray(xschedule)
-    cb = CircuitBuilder.CircuitBuilder(er, er, er, er, er, er)
+    # A landscape is a per-qubit weight. Scale it by the base error rate.
+    # None keeps every channel, including idle and CNOT, at the scalar er.
+    if pidle is None:
+        pidle_error = er
+    else:
+        pidle_error = np.asarray(pidle, dtype=float) * er
+    cb = CircuitBuilder.CircuitBuilder(er, er, er, er, er, pidle_error)
     cb.al('R 0 1 2 3 4 5 6 7')
     cb.al('H 0 1 2 3 4 5 6 7')
     #cb.al('X 0 1') # Flip some physical qubits to start, still must be in codespace
@@ -152,9 +165,13 @@ if os.path.exists(outpath):
 
 for s in tqdm(range(len(schedulelist))):
     zschedule, xschedule = schedulelist[s]
+    landscape = np.asarray(landscapes[s], dtype=float)
+    nqubits = 8 + len(zschedule) + len(xschedule)
+    if landscape.ndim != 1 or len(landscape) < nqubits:
+        raise ValueError(f"Landscape {s} has shape {landscape.shape}, circuit uses qubits 0..{nqubits - 1}")
     for n in range(len(nrounds)):
         for e in range(len(ers)):
-            cb = c832scheduleable(ers[e], nrounds[n], zschedule=zschedule, xschedule=xschedule)
+            cb = c832scheduleable(ers[e], nrounds[n], zschedule=zschedule, xschedule=xschedule, pidle=landscape)
             sample = cb.get_circuit().compile_sampler().sample(nshots)
             syndromelength = len(zschedule) + len(xschedule)
             totalshots, totalerrors, survived, survivederrors = sim_analysis(sample, syndromelength, nrounds[n], logops)
