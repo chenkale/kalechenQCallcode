@@ -39,3 +39,4 @@ Thumbs.db
 
 # Data
 *.bin
+*.mat
