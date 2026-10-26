@@ -14,8 +14,8 @@ nshots = 1000000
 # Per-qubit idle-error weights, one landscape per schedule in schedulelist.pkl.
 # Entry i is the multiplier for qubit i. Mean 1 keeps the average at `er`.
 # CNOT noise is the larger of the two qubits' idle probabilities.
-landscapepath = os.path.join(os.path.dirname(__file__), 'hotspoterrors2800.pkl')
-outpath = 'batcherouthotspot2800.csv'
+landscapepath = os.path.join(os.path.dirname(__file__), 'rankederrors2800.pkl')
+outpath = 'batcheroutranked2800.csv'
 
 
 schedulelist = pickle.load(open(os.path.join(os.path.dirname(__file__), 'schedulelist2.pkl'), 'rb'))
