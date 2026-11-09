@@ -125,10 +125,10 @@ class CircuitBuilder:
         for record_indices in record_indices_list:
             self.add_detector(record_indices)
 
-    def add_observable(self, observable_indices):
+    def add_observable(self, observable_indices, obs_index=0):
         measurement_indices = [f'rec[{x}]' for x in observable_indices]
         target_circuit = self._get_target_circuit()
-        target_circuit.append('OBSERVABLE_INCLUDE', measurement_indices, 0)
+        target_circuit.append('OBSERVABLE_INCLUDE', measurement_indices, obs_index)
 
     def set_ancilla_qubits(self, qubitslistx = None, qubitslistz = None):
         """

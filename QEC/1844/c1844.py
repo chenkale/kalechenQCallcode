@@ -3,9 +3,9 @@ Circuit-level Stim simulation for the [[18, 4, 4]] bivariate bicycle code.
 
 Mirrors the [[8, 3, 2]] pipeline in QEC/832/c832.py:
   CircuitBuilder + time-window schedules + warmup / noisy loop / cooldown
-  + detector XOR postselection and logical-parity analysis on final readout.
+  + detector XOR postselection and BP+OSD decoding on the Stim DEM.
 
-CNOt order follows the BB paper's Tanner directions (sX / sZ).
+CNOT order follows the BB paper's Tanner directions (sX / sZ).
 """
 import os
 import pickle
@@ -14,6 +14,13 @@ import numpy as np
 from tqdm import tqdm
 
 import CircuitBuilder
+
+try:
+    from ldpc.bposd_decoder import BpOsdDecoder
+    from ldpc.ckt_noise.dem_matrices import detector_error_model_to_check_matrices
+except ImportError:  # pragma: no cover - optional until ldpc is installed
+    BpOsdDecoder = None
+    detector_error_model_to_check_matrices = None
 
 N_DATA = 18
 N2 = 9
@@ -359,21 +366,28 @@ def c1844scheduleable(
     cb.al('R ' + ' '.join(str(i) for i in cb.ancilla_qubitsz))
     cb.end_loop()
 
-    # Cooldown
+    # Cooldown (noiseless); detectors vs last syndrome round (warmup if nrounds=0)
     for windowz in range(1, int(np.max(zschedule)) + 1):
         cb.couple_z_check(windowFiller(zschedule, windowz), False)
     cb.al('MR(0) ' + ' '.join(str(i) for i in cb.ancilla_qubitsz))
+    cb.add_detectors([[-1 - i, -1 - i - nancillas] for i in range(len(cb.ancilla_qubitsz))])
     cb.al('H ' + ' '.join(str(i) for i in cb.ancilla_qubitsx))
     for windowx in range(1, int(np.max(xschedule)) + 1):
         cb.couple_x_check(windowFiller(xschedule, windowx), False)
     cb.al('H ' + ' '.join(str(i) for i in cb.ancilla_qubitsx))
     cb.al('MR(0) ' + ' '.join(str(i) for i in cb.ancilla_qubitsx))
+    cb.add_detectors([[-1 - i, -1 - i - nancillas] for i in range(len(cb.ancilla_qubitsx))])
     cb.al('R ' + ' '.join(str(i) for i in cb.ancilla_qubitsz))
 
-    # Final data measurement
+    # Final data measurement + logical observables for DEM / BP+OSD
     if basis == 'X':
         cb.al(f'H {data_str}')
     cb.al(f'MR(0) {data_str}')
+    logops = lx if basis == 'X' else lz
+    for obs_id, logop in enumerate(logops):
+        recs = [-(N_DATA - q) for q in range(N_DATA) if logop[q]]
+        if recs:
+            cb.add_observable(recs, obs_id)
     return cb
 
 
@@ -406,7 +420,7 @@ def detector_builder(mseq, syndromelength=18, nphysicalqubits=N_DATA, nrounds=1,
 
 def sim_analysis(shots, syndromelength, nrounds, logops, nphysicalqubits=N_DATA):
     """
-    Offline detector XOR (warmup..cooldown) + logical parity on final readout.
+    Offline detector XOR (warmup..cooldown) + postselected logical parity.
     Returns totalshots, totalerrors[], survived, survivederrors[].
     """
     det_rounds = nrounds + 1
@@ -429,6 +443,91 @@ def sim_analysis(shots, syndromelength, nrounds, logops, nphysicalqubits=N_DATA)
     return totalshots, totalerrors, survived, survivederrors
 
 
+# Default BP+OSD knobs (match Exp_BivariateBicycleCode [[18,4,4]] settings)
+BPOSD_DEFAULTS = dict(
+    max_iter=30,
+    bp_method='ms',
+    ms_scaling_factor=0.625,
+    osd_method='osd_cs',
+    osd_order=7,
+)
+
+
+def _require_ldpc():
+    if BpOsdDecoder is None or detector_error_model_to_check_matrices is None:
+        raise ImportError(
+            'ldpc is required for BP+OSD decoding (pip install ldpc).'
+        )
+
+
+def dem_from_circuit(circuit):
+    """Stim detector error model; keep hyperedges (BB noise is not graphlike)."""
+    return circuit.detector_error_model(decompose_errors=False)
+
+
+def make_bposd_decoder(dem, **kwargs):
+    """
+    Build a BP+OSD decoder from a Stim DEM.
+    Returns (decoder, dem_matrices) where predicted observables are
+    (dem_matrices.observables_matrix @ decoder.decode(syndrome)) % 2.
+    """
+    _require_ldpc()
+    params = {**BPOSD_DEFAULTS, **kwargs}
+    matrices = detector_error_model_to_check_matrices(
+        dem, allow_undecomposed_hyperedges=True
+    )
+    if matrices.check_matrix.shape[1] == 0:
+        return None, matrices
+    decoder = BpOsdDecoder(
+        matrices.check_matrix,
+        error_channel=list(matrices.priors),
+        max_iter=params['max_iter'],
+        bp_method=params['bp_method'],
+        ms_scaling_factor=params['ms_scaling_factor'],
+        osd_method=params['osd_method'],
+        osd_order=params['osd_order'],
+    )
+    return decoder, matrices
+
+
+def decode_observables_bposd(det_shots, decoder, matrices):
+    """Predict observable flips for each detector shot via BP+OSD."""
+    nshots = det_shots.shape[0]
+    nobs = matrices.observables_matrix.shape[0]
+    if decoder is None or nobs == 0:
+        return np.zeros((nshots, nobs), dtype=bool)
+    preds = np.zeros((nshots, nobs), dtype=bool)
+    obs_mat = matrices.observables_matrix
+    for i in range(nshots):
+        corr = decoder.decode(det_shots[i])
+        preds[i] = np.asarray(obs_mat @ corr) % 2
+    return preds.astype(bool)
+
+
+def sim_analysis_bposd(circuit, nshots, seed=None, **bposd_kwargs):
+    """
+    Sample detectors/observables from `circuit` and decode with BP+OSD.
+
+    Returns
+    -------
+    totalshots : int
+    obs_errors : list[int]
+        Failures per logical observable (predicted XOR actual).
+    any_errors : int
+        Shots with at least one logical failure after decoding.
+    """
+    dem = dem_from_circuit(circuit)
+    decoder, matrices = make_bposd_decoder(dem, **bposd_kwargs)
+    sampler = circuit.compile_detector_sampler(seed=seed)
+    dets, obs = sampler.sample(nshots, separate_observables=True)
+    pred = decode_observables_bposd(dets, decoder, matrices)
+    fail = pred != obs
+    totalshots = int(nshots)
+    obs_errors = fail.sum(axis=0).astype(int).tolist()
+    any_errors = int(fail.any(axis=1).sum())
+    return totalshots, obs_errors, any_errors
+
+
 def save_code_artifacts(outdir=None):
     outdir = outdir or os.path.dirname(__file__)
     np.save(os.path.join(outdir, 'hx.npy'), hx)
@@ -442,11 +541,26 @@ def save_code_artifacts(outdir=None):
 
 
 # Default sweep (lighter than 832's 1e6; override in main)
-numrandomizations = 5
-nrounds_list = [1, 2, 4]
-ers = [0.0001, 0.001, 0.01]
+numrandomizations = 1
+nrounds_list = [1, 2]
+ers = [0.001, 0.01]
 nshots = 100000
 outdir = 'sim'
+
+
+def _run_one(circuit, syndromelength, nrounds, results_path, label, er):
+    """Postselection + BP+OSD on one circuit; append a CSV row."""
+    sample = circuit.compile_sampler().sample(nshots)
+    totalshots, totalerrors, survived, survivederrors = sim_analysis(
+        sample, syndromelength, nrounds, lx
+    )
+    bposd_shots, bposd_errors, bposd_any = sim_analysis_bposd(circuit, nshots)
+    with open(results_path, 'a') as f:
+        f.write(
+            f'{label},{er},{totalshots},{survived},'
+            f'"{survivederrors}","{totalerrors}",'
+            f'{bposd_shots},{bposd_any},"{bposd_errors}"\n'
+        )
 
 
 def main():
@@ -455,7 +569,8 @@ def main():
 
     # Sanity: zero-noise circuit should give trivial syndromes + even logicals on |+>^n
     cb0 = c1844scheduleable(0, 1)
-    sample0 = cb0.get_circuit().compile_sampler().sample(1000)
+    circ0 = cb0.get_circuit()
+    sample0 = circ0.compile_sampler().sample(1000)
     syndromelength = defaultzschedule.shape[0] + defaultxschedule.shape[0]
     totalshots, totalerrors, survived, survivederrors = sim_analysis(
         sample0, syndromelength, 1, lx
@@ -466,6 +581,9 @@ def main():
     )
     assert survived == totalshots
     assert all(e == 0 for e in survivederrors)
+    _, bposd_errors, bposd_any = sim_analysis_bposd(circ0, 1000)
+    print(f'zero-noise BP+OSD: any_errors={bposd_any}, per_obs={bposd_errors}')
+    assert bposd_any == 0
 
     # Base schedule diagram + small sweep
     cb = c1844scheduleable(0.01, 1)
@@ -475,20 +593,15 @@ def main():
 
     results_path = os.path.join(os.path.dirname(__file__), outdir, 'default_sweep.csv')
     with open(results_path, 'w') as f:
-        f.write('nrounds,er,totalshots,survived,survivederrors,totalerrors\n')
+        f.write(
+            'nrounds,er,totalshots,survived,survivederrors,totalerrors,'
+            'bposd_shots,bposd_any,bposd_errors\n'
+        )
 
     for n in tqdm(nrounds_list, desc='nrounds'):
         for er in ers:
             cb = c1844scheduleable(er, n)
-            sample = cb.get_circuit().compile_sampler().sample(nshots)
-            totalshots, totalerrors, survived, survivederrors = sim_analysis(
-                sample, syndromelength, n, lx
-            )
-            with open(results_path, 'a') as f:
-                f.write(
-                    f'{n},{er},{totalshots},{survived},'
-                    f'"{survivederrors}","{totalerrors}"\n'
-                )
+            _run_one(cb.get_circuit(), syndromelength, n, results_path, str(n), er)
 
     # Randomized time-labelings of the BB Tanner schedule (always conflict-free)
     for j in tqdm(range(numrandomizations), desc='random schedules'):
@@ -500,15 +613,9 @@ def main():
         for n in nrounds_list:
             for er in ers:
                 cb = c1844scheduleable(er, n, randz, randx)
-                sample = cb.get_circuit().compile_sampler().sample(nshots)
-                totalshots, totalerrors, survived, survivederrors = sim_analysis(
-                    sample, syndromelength, n, lx
+                _run_one(
+                    cb.get_circuit(), syndromelength, n, results_path, f'rand{j}_{n}', er
                 )
-                with open(results_path, 'a') as f:
-                    f.write(
-                        f'rand{j}_{n},{er},{totalshots},{survived},'
-                        f'"{survivederrors}","{totalerrors}"\n'
-                    )
     print(f'Wrote results to {results_path}')
 
 
