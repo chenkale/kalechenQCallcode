@@ -1,0 +1,370 @@
+{
+  "hx": "/home/kale-chen/Documents/QC/QEC/1844/hx.npy",
+  "hz": "/home/kale-chen/Documents/QC/QEC/1844/hz.npy",
+  "n": 18,
+  "nx": 9,
+  "nz": 9,
+  "distance_target": 4,
+  "family": [
+    {
+      "label": "sched_000_baseline",
+      "depth": 13,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.551,
+          "witness": [
+            9,
+            10
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.545,
+          "witness": [
+            72,
+            73
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_001",
+      "depth": 14,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_001_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_001_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.175,
+          "witness": [
+            3,
+            4
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_001_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_001_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.205,
+          "witness": [
+            68,
+            69
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_001_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_001_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_002",
+      "depth": 13,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_002_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_002_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.174,
+          "witness": [
+            10,
+            11
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_002_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_002_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.172,
+          "witness": [
+            73,
+            74
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_002_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_002_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_003",
+      "depth": 13,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_003_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_003_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.242,
+          "witness": [
+            10,
+            11
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_003_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_003_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.214,
+          "witness": [
+            66,
+            67
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_003_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_003_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_004",
+      "depth": 14,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_004_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_004_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.221,
+          "witness": [
+            11,
+            12
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_004_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_004_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.206,
+          "witness": [
+            73,
+            74
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_004_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_004_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_005",
+      "depth": 14,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_005_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_005_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.19,
+          "witness": [
+            11,
+            12
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_005_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_005_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.225,
+          "witness": [
+            73,
+            74
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_005_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_005_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_006",
+      "depth": 14,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_006_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_006_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.224,
+          "witness": [
+            11,
+            12
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_006_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_006_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.171,
+          "witness": [
+            73,
+            74
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_006_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_006_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_008",
+      "depth": 14,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_008_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_008_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.173,
+          "witness": [
+            11,
+            12
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_008_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_008_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.242,
+          "witness": [
+            66,
+            67
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_008_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_008_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    },
+    {
+      "label": "sched_009",
+      "depth": 13,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_009_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_009_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.185,
+          "witness": [
+            11,
+            12
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_009_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_009_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.224,
+          "witness": [
+            74,
+            75
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_009_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_009_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    }
+  ],
+  "best": {
+    "label": "sched_000_baseline",
+    "depth": 13,
+    "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_zschedule.npy",
+    "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_xschedule.npy",
+    "bases": {
+      "Z": {
+        "status": "exact",
+        "lower_bound": 2,
+        "upper_bound": 2,
+        "seconds": 0.551,
+        "witness": [
+          9,
+          10
+        ],
+        "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_Z.stim",
+        "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_Z.json"
+      },
+      "X": {
+        "status": "exact",
+        "lower_bound": 2,
+        "upper_bound": 2,
+        "seconds": 0.545,
+        "witness": [
+          72,
+          73
+        ],
+        "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_X.stim",
+        "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_out/sched_000_baseline_X.json"
+      }
+    },
+    "circuit_distance_interval": [
+      2,
+      2
+    ]
+  }
+}

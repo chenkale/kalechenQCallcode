@@ -1,0 +1,21 @@
+{
+  "baseline": {
+    "Z": {
+      "status": "exact",
+      "lower_bound": 2,
+      "upper_bound": 2,
+      "seconds": 0.178,
+      "stim": "/home/kale-chen/Documents/QC/tools/out_1844_verify/baseline_Z.stim",
+      "json": "/home/kale-chen/Documents/QC/tools/out_1844_verify/baseline_Z.json"
+    },
+    "X": {
+      "status": "exact",
+      "lower_bound": 2,
+      "upper_bound": 2,
+      "seconds": 0.186,
+      "stim": "/home/kale-chen/Documents/QC/tools/out_1844_verify/baseline_X.stim",
+      "json": "/home/kale-chen/Documents/QC/tools/out_1844_verify/baseline_X.json"
+    }
+  },
+  "optimized": null
+}

@@ -1,0 +1,48 @@
+{
+  "hx_shape": [
+    9,
+    18
+  ],
+  "hz_shape": [
+    9,
+    18
+  ],
+  "family": [
+    {
+      "label": "sched_000_baseline",
+      "depth": 13,
+      "zschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_playground_out/sched_000_baseline_zschedule.npy",
+      "xschedule": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_playground_out/sched_000_baseline_xschedule.npy",
+      "bases": {
+        "Z": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.284,
+          "witness": [
+            9,
+            10
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_playground_out/sched_000_baseline_Z.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_playground_out/sched_000_baseline_Z.json"
+        },
+        "X": {
+          "status": "exact",
+          "lower_bound": 2,
+          "upper_bound": 2,
+          "seconds": 0.236,
+          "witness": [
+            72,
+            73
+          ],
+          "stim": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_playground_out/sched_000_baseline_X.stim",
+          "json": "/home/kale-chen/Documents/QC/QEC/1844/prophunt_playground_out/sched_000_baseline_X.json"
+        }
+      },
+      "circuit_distance_interval": [
+        2,
+        2
+      ]
+    }
+  ]
+}

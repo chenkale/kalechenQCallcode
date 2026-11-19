@@ -1,0 +1,10 @@
+label,depth,Z_lb,Z_ub,X_lb,X_ub,circuit_lb,circuit_ub
+sched_000_baseline,13,2,2,2,2,2,2
+sched_001,14,2,2,2,2,2,2
+sched_002,13,2,2,2,2,2,2
+sched_003,13,2,2,2,2,2,2
+sched_004,14,2,2,2,2,2,2
+sched_005,14,2,2,2,2,2,2
+sched_006,14,2,2,2,2,2,2
+sched_008,14,2,2,2,2,2,2
+sched_009,13,2,2,2,2,2,2
